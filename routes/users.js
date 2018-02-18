@@ -3,6 +3,7 @@ const EXPIRED_INTERVAL = 60 * 60;
 
 var express = require('express');
 var User = require("../models/users");
+var Chatmsg = require("../models/chatmsgs");
 var router = express.Router();
 var GoogleAuth = require('google-auth-library');
 var auth = new GoogleAuth;
@@ -12,7 +13,7 @@ function checkUsersDB(payload, res) {
   // User is exist, check the session
   User.findOne( { email: payload.email } , function(err, user) {
     if (err) {
-      res.status(401).json({ error: "Database findOne error" });
+      res.status(401).json({ error: "User Database findOne error" });
     } else if (!user) {
       // User is not exist, save user info in the database.
       // Prepare a new user
@@ -37,6 +38,33 @@ function checkUsersDB(payload, res) {
       } else {
         res.status(201).json({success: "google login success"});
       }
+    }
+  });
+}
+
+function checkMsgDb(element, res) {
+  Chatmsg.findOne( { msgId: element.msgId } , function(err, msg) {
+    if (err) {
+      res.status(401).json({ error: "Message Database findOne error" });
+    } else if (!msg) {
+      // Message is not exist, save message info in the database.
+      // Prepare a new msg
+      var newMsg = new Chatmsg( {
+        msgId:          element.msgId,
+        liveChatId:     element.liveChatId,
+        displayName:    element.displayName,
+        displayMessage: element.displayMessage
+      });
+      newMsg.save( function(err, msg) {
+        if (err) {
+          console.log( 'error: Bad Request' );
+        } else {
+          console.log( 'success: msg' + element.msgId + ' is saved.' );
+        }
+      });
+    } else {
+      // Message is exist, return a success but not save to database.
+      console.log( 'success: msg' + element.msgId + ' is checked.' );
     }
   });
 }
@@ -70,7 +98,8 @@ router.post('/chatmsgs', headerCheck, function(req, res, next) {
   var data = JSON.parse(jsonStr);
 
   data.record.forEach(function(element) {
-    console.log(element.msgId + ": " + element.liveChatId + ": " + element.displayName + ": " + element.displayMessage);
+    //console.log(element.msgId + ": " + element.liveChatId + ": " + element.displayName + ": " + element.displayMessage);
+    checkMsgDb(element, res);
   });
   res.status(201).json({success: "chatmsgs success"});
 });
