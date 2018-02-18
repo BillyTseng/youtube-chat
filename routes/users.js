@@ -1,9 +1,9 @@
+const CLIENT_ID = "YOUR_CLIENT_ID";
+const EXPIRED_INTERVAL = 60 * 60;
+
 var express = require('express');
 var User = require("../models/users");
 var router = express.Router();
-
-const EXPIRED_INTERVAL = 60 * 60;
-const CLIENT_ID = "YOUR_CLIENT_ID";
 var GoogleAuth = require('google-auth-library');
 var auth = new GoogleAuth;
 var client = new auth.OAuth2(CLIENT_ID, '', '');
@@ -41,11 +41,15 @@ function checkUsersDB(payload, res) {
   });
 }
 
-router.post('/', function(req, res, next) {
+var headerCheck = function(req, res, next) {
+  // Check if the header is set
   if (req.headers["content-type"] !== "application/x-www-form-urlencoded") {
     return res.status(401).json({error: "Missing header"});
   }
+  next();
+}
 
+router.post('/', headerCheck, function(req, res, next) {
   var token = req.body.idtoken;
   client.verifyIdToken(
     token,
@@ -59,6 +63,16 @@ router.post('/', function(req, res, next) {
         checkUsersDB(payload, res);
       }
     });
+});
+
+router.post('/chatmsgs', headerCheck, function(req, res, next) {
+  var jsonStr = req.body.json;
+  var data = JSON.parse(jsonStr);
+
+  data.record.forEach(function(element) {
+    console.log(element.msgId + ": " + element.liveChatId + ": " + element.displayName + ": " + element.displayMessage);
+  });
+  res.status(201).json({success: "chatmsgs success"});
 });
 
 module.exports = router;
