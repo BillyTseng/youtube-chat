@@ -1,4 +1,6 @@
 const CLIENT_ID = "YOUR_CLIENT_ID";
+const REFRESH_INTERVAL = 1000;  // Refresh every second.
+var refreshTimer;
 
 function onSignIn(googleUser) {
   $("#g-signin").toggle();
@@ -52,6 +54,8 @@ function execute() {
               // Handle the results here (response.result has the parsed body).
               var liveChatId = response.result.items[0].snippet.liveChatId;
               console.log("liveChatId", liveChatId);
+              // Refresh every second.
+              refreshTimer = window.setInterval(function() { fetchLiveMsg(liveChatId); }, REFRESH_INTERVAL);
               fetchLiveMsg(liveChatId);
             },
             function(err) { console.error("Execute error", err); });
@@ -72,6 +76,10 @@ function fetchLiveMsg(liveChatId) {
                 htmlStr += "<p>" + element.authorDetails.displayName + ": " + element.snippet.displayMessage + "</p>";
               });
               $("#messageFeed").html(htmlStr);
+
+              // Reset the refresh timer
+              clearInterval(refreshTimer);
+              refreshTimer = window.setInterval(function() { fetchLiveMsg(liveChatId); }, REFRESH_INTERVAL);
             },
             function(err) { console.error("Execute error", err); });
 }
