@@ -24,6 +24,7 @@ router.post('/', function(req, res, next) {
         var userid = payload['sub'];
         //console.log(payload);
         res.status(200).json({success: "google login success"});
+        //res.status(200).json({session: "expired"});
       }
     });
 });

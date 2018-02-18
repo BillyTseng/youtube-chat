@@ -9,10 +9,20 @@ function onSignIn(googleUser) {
   //console.log('Email: ' + profile.getEmail());
 
   var xhr = new XMLHttpRequest();
+  xhr.responseType = "json";
   xhr.open('POST', '/users');
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
   xhr.onload = function() {
-    console.log('Signed in as: ' + xhr.responseText);
+    if (xhr.response.success) {
+      console.log("success: " + xhr.response.success);
+    } else if (xhr.response.session === 'expired') {
+      // session is expired, disconnect from google auth.
+      var auth2 = gapi.auth2.getAuthInstance();
+      auth2.disconnect();
+      // show signin button and hide signout button.
+      $("#g-signin").show();
+      $("#g-signout").hide();
+    }
   };
   xhr.send('idtoken=' + id_token);
 }
