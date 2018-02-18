@@ -1,3 +1,5 @@
+const CLIENT_ID = "YOUR_CLIENT_ID";
+
 function onSignIn(googleUser) {
   $("#g-signin").toggle();
   $("#g-signout").toggle();
@@ -15,6 +17,7 @@ function onSignIn(googleUser) {
   xhr.onload = function() {
     if (xhr.response.success) {
       console.log("success: " + xhr.response.success);
+      authenticate().then(loadClient).then(execute);
     } else if (xhr.response.session === 'expired') {
       // session is expired, disconnect from google auth.
       var auth2 = gapi.auth2.getAuthInstance();
@@ -26,6 +29,56 @@ function onSignIn(googleUser) {
   };
   xhr.send('idtoken=' + id_token);
 }
+
+function authenticate() {
+  return gapi.auth2.getAuthInstance()
+      .signIn({scope: "https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtube.readonly"})
+      .then(function() { console.log("Sign-in successful"); },
+            function(err) { console.error("Error signing in", err); });
+}
+function loadClient() {
+  return gapi.client.load("https://content.googleapis.com/discovery/v1/apis/youtube/v3/rest")
+      .then(function() { console.log("GAPI client loaded for API"); },
+            function(err) { console.error("Error loading GAPI client for API", err); });
+}
+// Make sure the client is loaded and sign-in is complete before calling this method.
+function execute() {
+  return gapi.client.youtube.liveBroadcasts.list({
+    "part": "snippet",
+    "broadcastStatus": "all",
+    "broadcastType": "all"
+  })
+      .then(function(response) {
+              // Handle the results here (response.result has the parsed body).
+              var liveChatId = response.result.items[0].snippet.liveChatId;
+              console.log("liveChatId", liveChatId);
+              fetchLiveMsg(liveChatId);
+            },
+            function(err) { console.error("Execute error", err); });
+}
+
+function fetchLiveMsg(liveChatId) {
+  return gapi.client.youtube.liveChatMessages.list({
+    "liveChatId": liveChatId,
+    "part": "snippet,authorDetails"
+  })
+      .then(function(response) {
+              // Handle the results here (response.result has the parsed body).
+              //console.log("Response", response);
+              var msgArray = response.result.items;
+              var htmlStr = "";
+              msgArray.forEach(function(element) {
+                console.log(element.authorDetails.displayName + ": " + element.snippet.displayMessage);
+                htmlStr += "<p>" + element.authorDetails.displayName + ": " + element.snippet.displayMessage + "</p>";
+              });
+              $("#messageFeed").html(htmlStr);
+            },
+            function(err) { console.error("Execute error", err); });
+}
+
+gapi.load("client:auth2", function() {
+  gapi.auth2.init({client_id: CLIENT_ID});
+});
 
 function signOut() {
   $("#g-signin").toggle();

@@ -2,8 +2,8 @@ var express = require('express');
 var User = require("../models/users");
 var router = express.Router();
 
-var EXPIRED_INTERVAL = 60;
-var CLIENT_ID = "YOUR_CLIENT_ID";
+const EXPIRED_INTERVAL = 60 * 60;
+const CLIENT_ID = "YOUR_CLIENT_ID";
 var GoogleAuth = require('google-auth-library');
 var auth = new GoogleAuth;
 var client = new auth.OAuth2(CLIENT_ID, '', '');
