@@ -53,7 +53,7 @@ function execute() {
     .then(function(response) {
       // Handle the results here (response.result has the parsed body).
       var liveChatId = response.result.items[0].snippet.liveChatId;
-      console.log("liveChatId", liveChatId);
+      //console.log("liveChatId", liveChatId);
       // Refresh in every REFRESH_INTERVAL.
       refreshTimer = window.setInterval(function() { fetchLiveMsg(liveChatId); }, REFRESH_INTERVAL);
       fetchLiveMsg(liveChatId);
@@ -71,12 +71,15 @@ function fetchLiveMsg(liveChatId) {
       //console.log("Response", response);
       var msgArray = response.result.items;
       var htmlStr = "";
+      var userObj = {};
       // Create JSON obj to contain all record.
       var chatJson = { record: [] };
 
       msgArray.forEach(function(element) {
         //console.log(element.authorDetails.displayName + ": " + element.snippet.displayMessage);
-        htmlStr += "<p>" + element.authorDetails.displayName + ": " + element.snippet.displayMessage + "</p>";
+        userObj[element.authorDetails.displayName] = element.authorDetails.channelId;
+        htmlStr += '<p class="chatmsgs ' + element.authorDetails.channelId + '">' +
+                    element.authorDetails.displayName + ": " + element.snippet.displayMessage + "</p>";
         chatJson.record.push({
           "msgId": element.id,
           "liveChatId": element.snippet.liveChatId,
@@ -85,6 +88,7 @@ function fetchLiveMsg(liveChatId) {
         });
       });
       $("#messageFeed").html(htmlStr);
+      setUserFilterButtons(userObj);
       sendChatJsonToBackend(chatJson);
       // Reset the refresh timer
       clearInterval(refreshTimer);
@@ -96,6 +100,30 @@ function fetchLiveMsg(liveChatId) {
 gapi.load("client:auth2", function() {
   gapi.auth2.init({client_id: CLIENT_ID});
 });
+
+function setUserFilterButtons(userObj) {
+  // Set the first button to show all messages.
+  var htmlStr = '<button class="btn btn-outline-warning" role="button">Show All</button>';;
+  $("#nameFilter").html(htmlStr);
+  $("button:contains('Show All')").click(function() {
+    $(".chatmsgs").show();
+  });
+
+  for (var displayName in userObj) {
+    // skip loop if the property is from prototype
+    if (!userObj.hasOwnProperty(displayName)) continue;
+    htmlStr = '<button class="btn btn-outline-info" role="button">' + displayName + '</button>';
+    $("#nameFilter").append(htmlStr);
+    $("button:contains('" + displayName + "')").click({channelId: userObj[displayName]}, filterMsgs);
+  }
+}
+
+function filterMsgs(event) {
+  var channelId = event.data.channelId;
+  //console.log(channelId);
+  $(".chatmsgs").hide();
+  $("." + channelId).show();
+}
 
 function sendChatJsonToBackend(chatJson) {
   var xhr = new XMLHttpRequest();
