@@ -4,6 +4,13 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+// https, required generated certificate.
+/*var fs = require('fs');
+var http = require('http');
+var https = require('https');
+var privateKey  = fs.readFileSync('/home/ubuntu/keys/privkey2.pem', 'utf8');
+var certificate = fs.readFileSync('/home/ubuntu/keys/fullchain2.pem', 'utf8');
+var credentials = {key: privateKey, cert: certificate};*/
 
 var index = require('./routes/index');
 var users = require('./routes/users');
@@ -42,5 +49,11 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+// https, required generated certificate.
+/*var httpServer = http.createServer(app);
+var httpsServer = https.createServer(credentials, app);
+
+httpServer.listen(8080);
+httpsServer.listen(8443);*/
 
 module.exports = app;
